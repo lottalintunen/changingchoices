@@ -1,0 +1,1205 @@
+************************************************ 
+
+/* 
+
+Changing choices cohorts 1975-1997 
+
+Name Lastname 
+
+File created: 21/2/2025, last modified: 26/2/2025  
+
+Data version used for the analysis created: 30/4/2024, 
+
+updated: 1/7/2024 
+
+*/ 
+
+************************************************ 
+
+clear 
+
+set more off, perm 
+
+cd "W:\Name Lastname\EduContract" 
+
+global folk "D:\ready-made\CONTINUOUS\FOLK_PERUS_C" 
+
+global custom "D:\dataproject\custom-made" 
+
+global data "W:\Name Lastname\EduContract\Data" 
+
+ 
+
+************************************************ 
+
+* start with FOLK data when 75-97 were 15, i.e. FOLK 1990-2012 
+
+use "$folk\folk_19872000_tua_perus22tot_1.dta", clear 
+
+append using "$folk\folk_20012010_tua_perus22tot_1.dta" 
+
+append using "$folk\folk_20112020_tua_perus22tot_1.dta" 
+
+ 
+
+* cohorts 1975-1997 
+
+keep if inrange(syntyv, 1975, 1997) 
+
+ 
+
+* keep only one person-year, age 15 for parental info 
+
+keep if vuosi==syntyv+15 
+
+ 
+
+* drop those who died before the age 21 
+
+drop if kuolv<=syntyv+21 // 6926 deleted 
+
+ 
+
+destring, replace 
+
+* recode gender 
+
+recode sukup (1=0) (2=1), gen(ch_gndr) 
+
+lab def ch_gndr 0 "male" 1 "female" 
+
+lab val ch_gndr ch_gndr 
+
+drop sukup 
+
+ 
+
+* rename variables 
+
+ren syntyv ch_yb 
+
+ren syntyp2 ch_origin 
+
+ren ptoim1 ch_status 
+
+ren asty ch_livingarr 
+
+ren pety ch_famty 
+
+ 
+
+* keep id, birth year, gender, year, origin, family type, living arrangements,  
+
+keep shnro vuosi ch_yb ch_gndr ch_origin ch_famty ch_livingarr ch_status 
+
+ 
+
+* recode origin to binary 
+
+recode ch_origin (11/12=1 "Finnish") (21/22=2 "other"), gen(origin) 
+
+ta origin 
+
+ 
+
+* match children to parents 
+
+merge m:1 shnro using "$custom\muut_aineistot\lapset_yhdetvanhemmat_18.dta", keep(match master) nogen 
+
+ 
+
+* drop if both parents missing 
+
+drop if isa_shnro=="" & aiti_shnro==""  // 699 deleted 
+
+ 
+
+* rename id 
+
+ren shnro child_shnro 
+
+ren aiti_shnro m_shnro 
+
+ren isa_shnro f_shnro 
+
+save "$data\basic_choice.dta", replace 
+
+ 
+
+************************************************ 
+
+* Parental EGP 
+
+************************************************ 
+
+* shared code, country-specific corrections by scholar 1 and scholar 2 
+
+ 
+
+* set target path+FILENAME for completed EGP-data set 
+
+global outcomefile "W:\Name Lastname\EduContract\Data\Egpdata_from1990.dta" 
+
+ 
+
+* set last year for which occup.info available (based on latest tkt-file) 
+
+global lastyear=2018 // set last year for which occup.info available 
+
+ 
+
+** SOURCE FILES 
+
+* define source data for ammattikoodi-variables 4-digit  
+
+global tktfolk8800 "D:\ready-made\CONTINUOUS\FOLK_TKT_C\folk_19872000_tua_tkt21tot_1.dta" 
+
+global tktfolk0110 "D:\ready-made\CONTINUOUS\FOLK_TKT_C\folk_20012010_tua_tkt21tot_1.dta" 
+
+global tktfolkuusin "D:\ready-made\CONTINUOUS\FOLK_TKT_C\folk_20112018_tua_tkt21tot_1.dta" 
+
+ 
+
+* define source data for basic info: all years with valid occupational variables 
+
+global perusfolk8800 "D:\ready-made\CONTINUOUS\FOLK_PERUS_C\folk_19872000_tua_perus22tot_1.dta" 
+
+global perusfolk0110 "D:\ready-made\CONTINUOUS\FOLK_PERUS_C\folk_20012010_tua_perus22tot_1.dta" 
+
+global perusfolkuusin "D:\ready-made\CONTINUOUS\FOLK_PERUS_C\folk_20112020_tua_perus22tot_1.dta" 
+
+ 
+
+* define conversion keys 
+
+global classif "W:\shared do-files and keys\Occupation" 
+
+global aml80toisco88 "$classif\tkk1980_isco88.dta" 
+
+global aml10to01 "$classif\conversion key AML10 to AML01.dta" 
+
+global aml01toisco "$classif\conversion key aml01 to isco88 WITH military conversion.dta" 
+
+global iscotoegp  "$classif\conversion key isco88 to egp.dta" 
+
+ 
+
+ 
+
+****LOAD STARTING DATA SET! ** 
+
+use $perusfolk8800, clear // Starting data: perus-folkdata (1988-2000) 
+
+append using $perusfolk0110 $perusfolkuusin 
+
+ 
+
+* restrict data to years with valid occupational info in source data 
+
+keep if inlist(vuosi, 1990, 1993, 1995, 2000) | inrange(vuosi, 2004, $lastyear) // select years for which occupational info available in the first place 
+
+ 
+
+* restrict data to necessary variables for generating egp-classes 
+
+keep shnro vuosi sukup syntyv amas1 sose 
+
+drop if vuosi-syntyv <18 // only use individuals that are at least 18 year old 
+
+ 
+
+* import occupations 
+
+merge 1:1 shnro vuosi using $tktfolk8800, keepusing(ammattikoodi) keep(match master) nogen 
+
+replace ammattikoodi="" if ammattikoodi=="XXXXX" | ammattikoodi=="9999" 
+
+merge 1:1 shnro vuosi using $tktfolk0110, keepusing(ammattikoodi) update keep(match match_update master) nogen 
+
+replace ammattikoodi="" if ammattikoodi=="XXXXX" | ammattikoodi=="9999" 
+
+merge 1:1 shnro vuosi using $tktfolkuusin, keepusing(ammattikoodi) update keep(match match_update master)  nogen 
+
+ 
+
+* only those person-years with valid occupational information considered 
+
+drop if ammattikoodi=="XXXXX" | ammattikoodi=="" 
+
+ 
+
+* mark years with differing occupational classifications 
+
+gen AML80=ammattikoodi if inlist(vuosi, 1990, 1993) 
+
+gen AML2001=ammattikoodi if inrange(vuosi,1995,2009) 
+
+gen AML2010=ammattikoodi if inrange(vuosi,2010,$lastyear) 
+
+drop ammattikoodi 
+
+ 
+
+* convert aml80 to isco88 
+
+merge m:1 AML80 using "$aml80toisco88", keepusing(isco88) keep(match master) nogen 
+
+*rename isco88 isco88_90_93 
+
+rename AML80 aml80 
+
+ 
+
+* convert aml10 to aml01 
+
+merge m:1 AML2010 using "$aml10to01", keepusing(AML2001) update keep(match match_update master) 
+
+ 
+
+* convert aml01 to isco88 
+
+rename AML2001 ammattikoodi 
+
+merge m:1 ammattikoodi using "$aml01toisco", keepusing(isco88) keep(match master) nogen 
+
+ 
+
+**** EGP  **** 
+
+ 
+
+* self-employment/employer marker 
+
+gen farmer=1  if sose=="10" // "maa- ja metsätalousyrittäjät" (sose 1989 luokitus) 
+
+gen selfemp=1 if amas=="2" // any employer/self-employed 
+
+ 
+
+*** supervisory position (employed) 
+
+gen superv=1  if inlist(sose, "31", "41") // supervisors: johtoteht. ylem.toimih. (31,311,312), esimiest.alemm.toimih. (41,411,412) 
+
+ 
+
+**** make 4-digit version out of  2- and 3-digit ISCO88-codes  
+
+replace isco88=regexs(0)+"0"    if regexm(isco88, "^[0-9][0-9][0-9]$") 
+
+replace isco88=regexs(0)+"00"   if regexm(isco88, "^[0-9][0-9]$") 
+
+replace isco88=regexs(0)+"000"  if regexm(isco88, "^[0-9]$") 
+
+ 
+
+** correct farmer's isco88 according to their self-employment/supervisory status (part of undoing Ganzeboom's combination of 2 farming classes) 
+
+destring isco88, replace 
+
+ 
+
+replace isco88=1311 if selfem==1 & isco88==6130 
+
+replace superv=1  if isco88==7510 & superv==.  
+
+replace isco88=1311 if superv==1 & inrange(isco88, 6100,6133) 
+
+replace isco88=6132  if superv==1 & inrange(isco88,9200,9213) 
+
+ 
+
+*** convert ISCO88 into root-EGP classes ** (these are the point of departure and will later be corrected according to supervisory/self-employment status) 
+
+ 
+
+merge m:1 isco88 using "$iscotoegp" , keepusing(egp10) keep(match master) nogen 
+
+ 
+
+ta isco88 if isco88!=. & egp==. 
+
+ 
+
+*** EGP corrections ***** (scholar 2 modifications to Ganzeboom) 
+
+* by supervisory status and self-employment (according to Ganzeboom) 
+
+* corrections to Ganzeboom: re-differentiate classes IIIa and IIIb (routine manual workers), (according to scholar 2) 
+
+* NOTE that this version of EGP groups ALL self-employed into IV  
+
+ 
+
+gen p=1  if inrange(isco88,1000,9299) // indicates occupations considered for promoting (on the basis of self-employment/supervisory status) = all 
+
+gen d=1  if inrange(isco88,1300, 1319) | inrange(isco88,3400,3439) | inrange(isco88,4000,4130) | inrange(isco88,4132,5120)| inrange(isco88,5122,5230)  // indicates occupations considered for degrading (on basis of their supervisory/self-empl.status) 
+
+ 
+
+replace egp10=2  if egp10==3 & superv==1 // same as ganzeboom 
+
+replace egp10=5  if (egp10==2 | egp10==3) & selfem==1 & d==1 //scholar 2 correction to ganzeboom (this is egp4 in ganzeboom) 
+
+replace egp10=6  if (egp10>=7 & egp10<=9) & selfem==1 & p==1 //scholar 2 correction to ganzeboom (this is egp5 in ganzeboom) 
+
+replace egp10=7  if egp10==8 & superv==1 // same as ganzeboom 
+
+replace egp10=11  if egp10==10 & selfem==1 // same as ganzeboom 
+
+replace egp10=6  if egp10==5 & superv==. // --> self-employed who don't  also supervise: IVb  (This doesn't really work, as supervisory status always relates to waged workers, scholar 1) 
+
+replace egp10=5  if egp10==6 & superv==1 // --> self-employed who also supervise: IVa (This doesn't really work, as supervisory status always relates to waged worker, scholar 1) 
+
+ 
+
+replace egp10=4  if egp10==3 & (isco88==4142 | isco88==4190 | inrange(isco88,4200,4215) | inrange(isco88,5000,5239)) // scholar 2 correction to re-differentiate IIIa and IIIb 
+
+replace egp10=6  if selfem==1 & egp10~=5  // CAUTION! scholar 2-correction: all self-employed without employees grouped into this group!!  
+
+replace egp10=11  if farmer==1 & egp10~=11  // farmer included even if isco88 missing  
+
+ 
+
+* re-order categories according to EGP class schema (1992) 
+
+replace egp10=20  if egp10==2		// II: Lower-service class' 
+
+replace egp10=30  if egp10==3		// IIIa: Higher routine non-manual  
+
+replace egp10=35  if egp10==4		// IIIb: Lower routine non-manual 
+
+replace egp10=40  if egp10==5		// IVa: Proprietors with employees *** CAUTION: this group cannot really be distinguished from IVb ****** 
+
+replace egp10=41  if egp10==6 		// IVb: Proprietors without employees *** CAUTION: this group cannot really be distinguished from IVa ****** 
+
+replace egp10=45  if egp10==11		// IVc: Farmers+ self+empl. primary producers 
+
+replace egp10=50  if egp10==7		// V: Lower technicians; supervisors of manual workers 
+
+replace egp10=60  if egp10==8		// VI: Skilled manual workers 
+
+replace egp10=70  if egp10==9		// VIIa: Semi-/unskilled manual workers (not agriculture) 
+
+replace egp10=75  if egp10==10 		// VIIb: Agricultural workers 
+
+replace egp10=10  if egp10==1		// I: higher service class 
+
+ 
+
+ 
+
+drop p d 
+
+ 
+
+* 10-class version, do not use as it is! 
+
+lab def egp10 10 "Higher service (I)" 20 "Lower service (II)" 30 "Higher routine non-manual (IIIa)" 35 "Lower routine non-manual (IIIb)" /// 
+
+40 "Small proprietors +employees (IVa)" 41 "Small proprietors, no employees (IVb)" 45 "Self-employed farmers (IVc)" 50 "Lower technicians (V)" /// 
+
+60 "Skilled manual (VI)" 70 "Semi-/unskilled manual (VIIa)" 75 "Agricultural workers (VIIb)", replace 
+
+ 
+
+lab val egp10 egp10 
+
+ 
+
+*collapse into own 7 category version 
+
+gen egp7= . 
+
+replace egp7=1 if egp10==10						// I: Higher service class 
+
+replace egp7=2 if egp10==20						// II: Lower service class 
+
+replace egp7=3 if egp10==30 | egp10==35			// III: Routine non-manual 
+
+replace egp7=4 if egp10==40 | egp10==41			// IV: Proprietors / Petit bourgeoisie 
+
+replace egp7=5 if egp10==45						// V: Farmers + self-empl. primary producers 
+
+replace egp7=6 if egp10==50 | egp10==60			// VI: Skilled manual workers + supervisors 
+
+replace egp7=7 if egp10==70 | egp10==75			// VII: Non-skilled workers 
+
+ 
+
+lab def egp7 1 "Higher service class (I)" 2 "Lower service class (II)" 3 "Routine non-manual (III)" 4 "Proprietors (IV)" 5 "Farmers (IVc)" 6 "Skilled manual (V+VI)" 7 "Non-skilled manual (VII)"  
+
+lab val egp7 egp7 
+
+ 
+
+keep shnro vuosi egp10 egp7 
+
+save "$data\Egpdata_from1990.dta", replace 
+
+ 
+
+* shared code ends here 
+
+******************************************************************************** 
+
+* fill in the occupational data for missing years 
+
+ 
+
+*shnro to numerical for xtset 
+
+sort shnro vuosi  
+
+egen id= group(shnro)  
+
+ 
+
+* into panel mode 
+
+xtset id vuosi 
+
+/*      panel variable:  id (unbalanced) 
+
+        time variable:  vuosi, 1990 to 2018, but with gaps 
+
+                delta:  1 unit 
+
+*/ 
+
+* create missing years, carryforward/backward shnro & impute egp for missing years 
+
+fillin id vuosi 
+
+tsfill 
+
+ 
+
+/* 
+
+    _fillin |      Freq.     Percent        Cum. 
+
+------------+----------------------------------- 
+
+          0 | 42,472,563       49.26       49.26 
+
+          1 | 43,745,751       50.74      100.00 
+
+------------+----------------------------------- 
+
+      Total | 86,218,314      100.00 
+
+*/ 
+
+ 
+
+recode _fillin (0=0 "Existed") (1=1 "Filled") (.=2 "Added & filled"), gen(filled)  
+
+tab1 filled egp10 egp7 
+
+ 
+
+/* 
+
+     RECODE of | 
+
+       _fillin |      Freq.     Percent        Cum. 
+
+---------------+----------------------------------- 
+
+       Existed | 42,472,563       32.27       32.27 
+
+        Filled | 43,745,751       33.24       65.52 
+
+Added & filled | 45,378,060       34.48      100.00 
+
+---------------+----------------------------------- 
+
+         Total |131,596,374      100.00 
+
+  
+
+ 
+
+*/ 
+
+ 
+
+*bysort id (vuosi): fillmissing shnro, with(any) 
+
+sort id vuosi 
+
+bysort id (vuosi): carryforward shnro, replace // (57,060,442 real changes made) 
+
+bysort id (vuosi): carryforward egp10, gen(egp10_cf) // (69,028,002 real changes made) 
+
+bysort id (vuosi): carryforward egp7, gen(egp7_cf) // (69028002 real changes made) 
+
+tab1 egp10_cf egp7_cf 
+
+ 
+
+gsort id - vuosi 
+
+bysort id: carryforward shnro, replace 
+
+bysort id: carryforward egp10_cf, replace //(15,227,999 real changes made) 
+
+bysort id: carryforward egp7_cf, replace //(15,227,999 real changes made) 
+
+tab1 egp10_cf egp7_cf 
+
+ 
+
+ 
+
+*drop egp7 egp10 id 
+
+sort shnro vuosi 
+
+compress 
+
+save "$data\Egpdata_from1990.dta", replace 
+
+************************************************ 
+
+ 
+
+* merge basic with egp 
+
+use "$data\basic_choice.dta", clear 
+
+foreach par in m f { 
+
+    ren `par'_shnro shnro 
+
+merge m:1 shnro vuosi using "$globaloutcomefile\Egpdata_from1990.dta", /// 
+
+keepusing(egp7_cf _fillin) keep(match master) nogen 
+
+ 
+
+foreach var in egp7_cf _fillin { 
+
+ren `var' `par'_`var' 
+
+} 
+
+ren shnro `par'_shnro 
+
+} 
+
+compress 
+
+save "$data\basicparegp_choice.dta", replace 
+
+erase "$data\Egpdata_from1990.dta"  
+
+************************************************ 
+
+tab1 m_egp7_cf f_egp7_cf, mi 
+
+ta m_egp7_cf f_egp7_cf, row mi	// mother's egp missing for 12.34%, father's missing for 8.18% 
+
+ 
+
+ 
+
+************************************************ 
+
+* generate PARENTAL AVERAGE EGP 
+
+sort child_shnro vuosi  
+
+egen avg_egp7=rmean(m_egp7_cf f_egp7_cf) //36,062 missing values generated 
+
+egen avg_egp10=rmean(m_egp10_cf f_egp10_cf) //36,062 missing values generated 
+
+tab1 avg_egp7 avg_egp10, mi 
+
+* 2.64% missing parental EGP 
+
+ 
+
+* generate PARENTAL MAX EGP 
+
+sort child_shnro vuosi  
+
+egen max_egp7=rowmax(m_egp7_cf f_egp7_cf) //36,062 missing values generated 
+
+egen max_egp10=rowmax(m_egp10_cf f_egp10_cf) //36,062 missing values generated 
+
+tab1 max_egp7 max_egp10, mi 
+
+ 
+
+* generate PARENTAL  
+
+*collapse into own 6 category version 
+
+gen max_egp6= . 
+
+replace max_egp6=1 if max_egp10==10	| max_egp10==20			// I+II: Service class 
+
+replace max_egp6=2 if max_egp10==30 | max_egp10==35			// III: Routine non-manual 
+
+replace max_egp6=3 if max_egp10==40 | max_egp10==41			// IV: Proprietors / Petit bourgeoisie 
+
+replace max_egp6=4 if max_egp10==45					// V: Farmers + self-empl. primary producers 
+
+replace max_egp6=5 if max_egp10==50 | max_egp10==60			// VI: Skilled manual workers + supervisors 
+
+replace max_egp6=6 if max_egp10==70 | max_egp10==75			// VII: Non-skilled workers 
+
+ 
+
+lab def max_egp6 1 "Service class (I+II)" 2 "Routine non-manual (III)" 3 "Proprietors (IV)" 4 "Farmers (IVc)" 5 "Skilled manual (V+VI)" 6 "Non-skilled manual (VII)"  
+
+lab val max_egp6 max_egp6 
+
+ 
+
+recode m_egp7_cf (1 2 =1 "Service class (I+II)") (3 = 2 "Routine non-manual (III)") (4 = 3 "Proprietors (IV)") (5 = 4 "Farmers (IVc)") (6 = 5 "Skilled manual (V+VI)") (7 = 6 "Non-skilled manual (VII)"), gen (m_egp6)  
+
+ 
+
+recode f_egp7_cf (1 2 =1 "Service class (I+II)") (3 = 2 "Routine non-manual (III)") (4 = 3 "Proprietors (IV)") (5 = 4 "Farmers (IVc)") (6 = 5 "Skilled manual (V+VI)") (7 = 6 "Non-skilled manual (VII)"), gen (f_egp6)  
+
+ 
+
+save "$data\basicparegp_choice.dta", replace 
+
+erase "$data\basic_choice.dta" 
+
+ 
+
+************************************************ 
+
+* Parental education 
+
+************************************************ 
+
+global tutk "D:\ready-made\CONTINUOUS\FOLK_TUTK_C" 
+
+ 
+
+use "$data\basicparegp_choice.dta", clear 
+
+ren shnro ch_shnro 
+
+foreach par in m f { 
+
+    ren `par'_shnro shnro 
+
+merge m:1 shnro vuosi using "$tutk\folk_19872000_tua_tutk21tot_1.dta", /// 
+
+keepusing(koulk) keep(match master) nogen 
+
+merge m:1 shnro vuosi using "$tutk\folk_20012010_tua_tutk21tot_1.dta", /// 
+
+keepusing(koulk) keep(match master match_update) update nogen 
+
+merge m:1 shnro vuosi using "$tutk\folk_20112019_tua_tutk21tot_1.dta", /// 
+
+keepusing(koulk) keep(match master match_update) update nogen 
+
+merge m:1 shnro vuosi using "$tutk\folk_tutk_2020_1.dta", /// 
+
+keepusing(koulk) keep(match master match_update) update nogen 
+
+merge m:1 shnro vuosi using "$tutk\folk_tutk_2021_1.dta", /// 
+
+keepusing(koulk) keep(match master match_update) update nogen 
+
+ 
+
+ren koulk `par'_koulk 
+
+    ren shnro `par'_shnro 
+
+} 
+
+ 
+
+save "$data\basicpar_choices.dta.dta", replace 
+
+ 
+
+destring, replace 
+
+* mothers education 
+
+gen m_edu_3digit= int(m_koulk/1000) // Collapse koulk variable into 3-digit format 
+
+recode m_edu_3digit (311/499=2 "voc sec") (301/309=3 "gen sec") (511/599 613 628 653 654 =4 /// 
+
+"opisto") (611 621 631 651 652 661 671 681 691 =5 "poly") (612 622/627 629 632/634 639 /// 
+
+642 649 655 659 662 672 682 692 699 =6 "bach uni") (711 721 731 750 761 771 781 791 =7 /// 
+
+"mast poly") (712 719 722/729 732/739 742 749 751 754 759 762 772 775 782 792 799 =8 /// 
+
+"mast uni") (811/899=9 "lic/doct"), gen(m_edu) 
+
+replace m_edu=1 if m_edu==. //& vuosi>=m_syntyv+16 & m_kuolv>vuosi // 1=no degrees after compulsory schooling, which ends at age 16 
+
+replace m_edu=4 if inlist(m_koulk, 662551, 662552, 662599, 672651) // errors in the original code 
+
+replace m_edu=4 if inlist(m_koulk, 682401, 682499) // errors in the original code 
+
+replace m_edu=4 if inlist(m_koulk, 613952, 719952, 719953) // errors in the original code 
+
+recode m_edu 1=1 2 417/487=2 3=3 4=4 5=5 6=6 7=7 8=8 9=9 // special vocational degrees 
+
+lab var m_edu "Highest completed degree" 
+
+ 
+
+* fathers education 
+
+gen f_edu_3digit= int(f_koulk/1000) // Collapse koulk variable into 3-digit format 
+
+recode f_edu_3digit (311/499=2 "voc sec") (301/309=3 "gen sec") (511/599 613 628 653 654 =4 /// 
+
+"opisto") (611 621 631 651 652 661 671 681 691 =5 "poly") (612 622/627 629 632/634 639 /// 
+
+642 649 655 659 662 672 682 692 699 =6 "bach uni") (711 721 731 750 761 771 781 791 =7 /// 
+
+"mast poly") (712 719 722/729 732/739 742 749 751 754 759 762 772 775 782 792 799 =8 /// 
+
+"mast uni") (811/899=9 "lic/doct"), gen(f_edu) 
+
+replace f_edu=1 if f_edu==. //& vuosi>=f_syntyv+16 & f_kuolv>vuosi // 1=no degrees after compulsory schooling, which ends at age 16 
+
+replace f_edu=4 if inlist(f_koulk, 662551, 662552, 662599, 672651) // errors in the original code 
+
+replace f_edu=4 if inlist(f_koulk, 682401, 682499) // errors in the original code 
+
+replace f_edu=4 if inlist(f_koulk, 613952, 719952, 719953) // errors in the original code 
+
+recode f_edu 1=1 2 417/487=2 3=3 4=4 5=5 6=6 7=7 8=8 9=9 // special vocational degrees 
+
+lab var f_edu "Highest completed degree" 
+
+ 
+
+* create paredu, dominance approach 
+
+egen paredu=rowmax(m_edu f_edu) 
+
+lab def paredu 1 "no degree" 2 "voc sec" 3 "gen sec" 4 "lowest tert." 5 "BA poly" 6 "BA uni" 7 "MA poly" 8 "MA uni" 9 "lic/doct" 
+
+lab val paredu paredu 
+
+lab var paredu "Highest parental education" 
+
+ta paredu, m // 
+
+ 
+
+ 
+
+* collapse into categories 
+
+recode m_edu (1=1 "no degree") (2/3=2 "sec edu") (4/6=3 "low tert.") (7/9=4 "high tert."), gen(m_edu4cat) 
+
+label var m_edu4cat "Highest completed degree" 
+
+recode f_edu (1=1 "no degree") (2/3=2 "sec edu") (4/6=3 "low tert.") (7/9=4 "high tert."), gen(f_edu4cat) 
+
+lab var f_edu4cat "Highest completed degree" 
+
+ 
+
+* create paredu, dominance approach 
+
+egen paredu4cat=rowmax(m_edu4cat f_edu4cat) 
+
+lab def paredu4cat 1 "no degree" 2 "sec edu" 3 "low tert." 4 "high tert." 
+
+lab val paredu4cat paredu4cat 
+
+lab var paredu4cat "Highest parental education" 
+
+ta paredu4cat, m // 
+
+ 
+
+* create paredu, dominance approach 
+
+recode paredu (1=4 "no degree") (2/3=3 "sec edu") (4/6=2 "low tert.") (7/9=1 "high tert."), gen(pedu4cat) 
+
+lab var pedu4cat "Highest parental education" 
+
+ta pedu4cat, m // 
+
+ 
+
+* drop temporary variables 
+
+drop m_edu_3digit f_edu_3digit m_koulk f_koulk 
+
+ 
+
+* save 
+
+compress 
+
+save "$data\basicpar_choices.dta", replace 
+
+erase "$data\basicparedu_choice.dta" 
+
+ 
+
+************************************************ 
+
+* Individual variables 
+
+************************************************ 
+
+global tyhr "D:\ready-made\CONTINUOUS\EDUC_TYHR_C" 
+
+ 
+
+* start with FOLK data when 75-95 were 24, i.e. FOLK 1999-2019 
+
+use "$folk\folk_19872000_tua_perus22tot_1.dta", clear 
+
+append using "$folk\folk_20012010_tua_perus22tot_1.dta" 
+
+append using "$folk\folk_20112020_tua_perus22tot_1.dta" 
+
+append using "$folk\folk_perus_2021_1.dta" 
+
+ 
+
+* keep basic vars + yotutk  
+
+keep shnro vuosi syntyv kuolv yotutk 
+
+ 
+
+* cohorts 1975-1997 
+
+keep if inrange(syntyv, 1975, 1997) 
+
+ 
+
+* carry forward & backward yotutk 
+
+sort shnro vuosi 
+
+bysort shnro (vuosi): carryforward yotutk, replace // (678 real changes made) 
+
+gsort shnro - vuosi 
+
+bysort shnro: carryforward yotutk, replace // (19,355,550 real changes made) 
+
+ 
+
+sort shnro vuosi 
+
+save "$data\secbasic_choice.dta", replace 
+
+ 
+
+* Secondary school application registers 1991-2001: compulsory school grades (GPA)  
+
+* 1989-1997 
+
+use "$tyhr\educ_tyhr_19891995.dta", clear 
+
+append using "$tyhr\educ_tyhr_19961997.dta" 
+
+duplicates drop // 526 observations deleted 
+
+drop if shnro=="" // 5593 
+
+keep hakuvuosi lka shnro 
+
+ta lka, m // 5.81% missing, further 8.68% coded as 0.0 or .0 resulting altogether in 14.49% 
+
+list lka if missing(real(lka)) 
+
+destring lka, force gen(gpa) // (69533 missing values generated) 
+
+ta gpa, m 
+
+hist gpa, freq 
+
+save "$data\tyhr19891997_choice.dta", replace 
+
+ 
+
+* 1998-2007 
+
+use "$tyhr\educ_tyhr_19982007.dta", clear 
+
+duplicates drop // 1568 observations deleted 
+
+drop if shnro=="" // 9687 
+
+keep hakuvuosi lka shnro 
+
+ta lka, m // 6.79% missing, further 3.72% coded as 0.0 or .0 resulting altogether in 10.51% 
+
+list lka if missing(real(lka)) 
+
+destring lka, force gen(gpa) // (67661 missing values generated) 
+
+ta gpa, m 
+
+hist gpa, freq 
+
+save "$data\tyhr19982007_choice.dta", replace 
+
+ 
+
+* 2008-2013 
+
+use "$tyhr\educ_tyhr_20082013.dta", clear 
+
+duplicates drop // 772 observations deleted 
+
+drop if shnro=="" // 2816 observations deleted 
+
+ren vuosi hakuvuosi 
+
+keep hakuvuosi lka shnro 
+
+ta lka, m // 0.95% missing, further 3.20% coded as 0.0 or .0 resulting altogether in 4.15% 
+
+list lka if missing(real(lka)) 
+
+ren lka gpa 
+
+ta gpa, m 
+
+hist gpa, freq 
+
+save "$data\tyhr20082013_choice.dta", replace 
+
+ 
+
+* merge and keep only 1990-> 
+
+use "$data\tyhr19891997_choice.dta", clear 
+
+append using "$data\tyhr19982007_choice.dta" 
+
+append using "$data\tyhr20082013_choice.dta" 
+
+keep if hakuvuosi >=1990 
+
+ren hakuvuosi vuosi 
+
+replace gpa= . if gpa==0 //(165,585 real changes made, 165,585 to missing) 
+
+ta gpa, m // 11% missing --> who didn't apply to postcompulsory education 
+
+ 
+
+*** one person-year record (if accessed, take that one) 
+
+sort shnro vuosi gpa 
+
+ 
+
+bysort shnro vuosi: gen seq=_n 
+
+bysort shnro vuosi: gen max=_N 
+
+keep if seq==max // (102,526 observations deleted) 
+
+drop seq max  
+
+ 
+
+save "$data\gpa19912013_choice.dta", replace 
+
+ 
+
+ erase "$data\tyhr19891997_choice.dta" 
+
+ erase "$data\tyhr19982007_choice.dta" 
+
+ erase "$data\tyhr20082013_choice.dta" 
+
+  
+
+************************************************ 
+
+* type of first secondary degree (vocational/general) 
+
+use "$tutk\folk_19872000_tua_tutk21tot_1.dta", clear 
+
+append using "$tutk\folk_20012010_tua_tutk21tot_1.dta" 
+
+append using "$tutk\folk_20112019_tua_tutk21tot_1.dta" 
+
+append using "$tutk\folk_tutk_2020_1.dta" 
+
+append using "$tutk\folk_tutk_2021_1.dta" 
+
+ 
+
+keep if vuosi>=1990 
+
+sort shnro vuosi 
+
+ 
+
+* collapse highest degree, other most recent degree, other 2nd, 3rd, 4th most recent degree into 3-digit format and make categorical variables 
+
+destring koulk ktutk*, replace 
+
+gen koulk_3cat= int(koulk/1000)  
+
+gen ktutk1_3cat= int(ktutk_1/1000) 
+
+gen ktutk2_3cat= int(ktutk_2/1000) 
+
+gen ktutk3_3cat= int(ktutk_3/1000) 
+
+gen ktutk4_3cat= int(ktutk_4/1000) 
+
+ 
+
+recode koulk_3cat (311/499=1 "voc sec") (301/309=2 "gen sec") (else =3 "higher") , gen(edu1) 
+
+ 
+
+recode ktutk1_3cat (.=0 "no prev. degree") (311/499=1 "voc sec") (301/309=2 "gen sec") (else =3 "higher") , gen(edu2) 
+
+recode ktutk2_3cat (.=0 "no prev. degree") (311/499=1 "voc sec") (301/309=2 "gen sec") (else =3 "higher") , gen(edu3) 
+
+recode ktutk3_3cat (.=0 "no prev. degree") (311/499=1 "voc sec") (301/309=2 "gen sec") (else =3 "higher") , gen(edu4) 
+
+recode ktutk4_3cat (.=0 "no prev. degree") (311/499=1 "voc sec") (301/309=2 "gen sec") (else =3 "higher") , gen(edu5) 
+
+ 
+
+keep shnro vuosi kirtuv edu1 edu2 edu3 edu4 edu5 suorv* 
+
+ 
+
+ 
+
+save "$data\secdegree_choice.dta", replace 
+
+************************************************ 
+
+ 
+
+use "$data\secbasic_choice.dta", clear 
+
+merge m:1 shnro vuosi using "$data\secdegree_choice.dta", keep(match master) nogen 
+
+merge m:1 shnro vuosi using "$data\gpa19912013_choice.dta", keep (match master) nogen 
+
+ 
+
+* extend gpa for all years 
+
+sort shnro vuosi 
+
+bysort shnro (vuosi): carryforward gpa, replace // (8559793 real changes made) 
+
+gsort shnro - vuosi 
+
+by shnro: carryforward gpa, replace // (701641 real changes made) 
+
+ 
+
+sort shnro vuosi 
+
+ 
+
+* drop years after 21 and before 16 
+
+keep if vuosi<=syntyv+21  
+
+keep if vuosi>=syntyv+16 //(16,602,208 observations deleted) 
+
+ 
+
+* fix edu1 variable, includes school dropouts 
+
+clonevar educ=edu1 
+
+replace educ=0 if educ==. & vuosi>=syntyv+16 // & kuolv>vuosi // 0=no degrees after compulsory schooling, which ends at age 16 (8,348,069 real changes made) 
+
+lab define educ 0 "no post-compulsory" 1 "voc sec" 2 "gen sec" 3 "higher" 
+
+lab val educ educ 
+
+drop if kuolv<=syntyv+21 // deceased before age 21(13,313 observations deleted) 
+
+ 
+
+** create secondary degree variable from educ & edu2-edu5   
+
+sort shnro vuosi 
+
+gen secdeg=. 
+
+replace secdeg=1 if educ==2 | edu2==2 | edu3==2 | edu4==2 | edu5==2 // gen sec 
+
+replace secdeg=0 if educ==1 | edu2==1 | edu3==1 | edu4==1 | edu5==1 //voc sec  
+
+replace secdeg=2 if educ==0 //no post-compulsory 
+
+lab def secdeg 0 "voc sec" 1 "gen sec" 2 "no post-compulsory"  
+
+lab val secdeg secdeg 
+
+ 
+
+bysort shnro (vuosi): carryforward secdeg, replace // (50639 real changes made) 
+
+ 
+
+gen ika=vuosi-syntyv 
+
+ta ika 
+
+ta syntyv ika 
+
+* keep only one person-year, age 21 for sec degree by the age 21 
+
+keep if vuosi==syntyv+21 //(7,505,154 observations deleted) 
+
+ 
+
+ren syntyv ch_yb 
+
+ren vuosi year21 
+
+ 
+
+drop lka 
+
+save "$data\secbasic_choice.dta", replace 
+
+erase "$data\secdegree_choice.dta" 
+
+erase "$data\gpa19912013_choice.dta" 
+
+ 
+
+*** 
+
+use "$data\basicparegp_choice.dta", clear 
+
+merge m:1 shnro using "$data\secbasic_choice.dta", keep (match master) nogen  
+
+compress 
+
+save "$data\choices_newdata.dta", replace 
+
+erase "$data\basicparegp_choice.dta" 
+
+erase "$data\secbasic_choice.dta" 
+
+ 
+
+ 
