@@ -1,0 +1,796 @@
+************************************************ 
+/* 
+Changing choices cohorts 1975-1997 
+Name Lastname 
+File created: 21/2/2025, revised: 4/11/2025 
+Data version used for the analysis created: 30/4/2024, 
+updated: 1/7/2024 
+*/ 
+************************************************ 
+clear 
+set more off, perm 
+cd "W:\Name Lastname\EduContract" 
+global temp "W:\Name Lastname\StataTemp" 
+global data "W:\Name Lastname\EduContract\Data" 
+global tables "W:\Name Lastname\EduContract\Tables" 
+global graphs "W:\Name Lastname\EduContract\Graphs" 
+ 
+************************************************ 
+use "$data\choices_newdata.dta", clear 
+ 
+* Listwise deletion 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0 // delete missing for main variables of interest (93,365 observations deleted) 
+drop if secdeg==2 // no secondary degree (227,876 observations deleted) 
+egen z_gpa=std(gpa) //  
+ 
+set scheme plotplainblind 
+ 
+************************************************ 
+* Descriptive statistics: 
+************************************************ 
+ 
+*Table 2: Distributions of upper secondary degrees and GPAs by parental class and gender 
+************************************************ 
+ 
+* All 
+ta max_egp6 
+ta max_egp6 secdeg, row 
+tabstat gpa, by(max_egp6) stats(mean sd) 
+ 
+* Female 
+ta max_egp6 if ch_gndr==1 
+ta max_egp6 secdeg if ch_gndr==1, row 
+tabstat gpa if ch_gndr==1, by(max_egp6) stats(mean sd) 
+ 
+* Male 
+ta max_egp6 if ch_gndr==0 
+ta max_egp6 secdeg if ch_gndr==0, row 
+tabstat gpa if ch_gndr==0, by(max_egp6) stats(mean sd) 
+ 
+************************************************ 
+* Figure 2: Kernell's density distribution of GPA (below 5 omitted) by parental SES and gender 
+* The bandwidth is set at 0.25 and values below 5 are omitted to comply with the data protection rules. The maximum value of GPA (10) is not omitted as this would result in a skewed interpretation of the distribution. However, the number of observations for all, females, and males in each class are beyond the minimum required and the bandwidth is set at 0.25 to ensure any individual cannot be recognized.  
+************************************************ 
+ 
+* All	 
+kdensity gpa if max_egp6 == 1, bwidth(0.25) gen(x yA) nograph 
+kdensity gpa if max_egp6 == 2, bwidth(0.25) gen(xb yB) nograph 
+kdensity gpa if max_egp6 == 3, bwidth(0.25) gen(xc yC) nograph 
+kdensity gpa if max_egp6 == 4, bwidth(0.25) gen(xd yD) nograph 
+kdensity gpa if max_egp6 == 5, bwidth(0.25) gen(xe yE) nograph 
+kdensity gpa if max_egp6 == 6, bwidth(0.25) gen(xf yF) nograph 
+ 
+twoway (line yA x if x >= 5) (line yB xb if xb  >= 5) (line yC xc if xc >= 5) (line yD xd if xd >= 5) (line yE xe if xe >= 5) (line yF xf if xf >= 5), /// 
+name(all, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) ylabel(0(0.1)0.5) /// 
+title("All") xtitle("") ytitle("") /// 
+legend(order(1 "Sevice class" 2 "Routine non-manual" 3 "Proprietors" 4 "Farmers" 5 "Skilled manual" 6 "Non-skilled manual")) /// 
+aspectratio(0.5) /// 
+saving("$graphs\GPAbyEGP6new.gph") 
+drop x xb xc xd xe xf yA yB yC yD yE yF  
+ 
+* Female 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr == 1 
+kdensity gpa if max_egp6 == 1, bwidth(0.25) gen(x yA) nograph 
+kdensity gpa if max_egp6 == 2, bwidth(0.25) gen(xb yB) nograph 
+kdensity gpa if max_egp6 == 3, bwidth(0.25) gen(xc yC) nograph 
+kdensity gpa if max_egp6 == 4, bwidth(0.25) gen(xd yD) nograph 
+kdensity gpa if max_egp6 == 5, bwidth(0.25) gen(xe yE) nograph 
+kdensity gpa if max_egp6 == 6, bwidth(0.25) gen(xf yF) nograph 
+ 
+twoway (line yA x if x >= 5) (line yB xb if xb  >= 5) (line yC xc if xc >= 5) (line yD xd if xd >= 5) (line yE xe if xe >= 5) (line yF xf if xf >= 5), /// 
+name(female, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) ylabel(0(0.1)0.5) /// 
+title("Female") xtitle("") ytitle("") /// 
+legend(order(1 "Sevice class" 2 "Routine non-manual" 3 "Proprietors" 4 "Farmers" 5 "Skilled manual" 6 "Non-skilled manual")) /// 
+aspectratio(0.5) /// 
+saving("$graphs\GPAbyEGP6_femalenew.gph") 
+drop x xb xc xd xe xf yA yB yC yD yE yF  
+ 
+* Male 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr == 0 
+kdensity gpa if max_egp6 == 1, bwidth(0.25) gen(x yA) nograph 
+kdensity gpa if max_egp6 == 2, bwidth(0.25) gen(xb yB) nograph 
+kdensity gpa if max_egp6 == 3, bwidth(0.25) gen(xc yC) nograph 
+kdensity gpa if max_egp6 == 4, bwidth(0.25) gen(xd yD) nograph 
+kdensity gpa if max_egp6 == 5, bwidth(0.25) gen(xe yE) nograph 
+kdensity gpa if max_egp6 == 6, bwidth(0.25) gen(xf yF) nograph 
+ 
+twoway (line yA x if x >= 5) (line yB xb if xb  >= 5) (line yC xc if xc >= 5) (line yD xd if xd >= 5) (line yE xe if xe >= 5) (line yF xf if xf >= 5), /// 
+name(male, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) ylabel(0(0.1)0.5) /// 
+title("Male") xtitle("") ytitle("") /// 
+legend(order(1 "Sevice class" 2 "Routine non-manual" 3 "Proprietors" 4 "Farmers" 5 "Skilled manual" 6 "Non-skilled manual")) /// 
+aspectratio(0.5) /// 
+saving("$graphs\GPAbyEGP6_malenew.gph") 
+drop x xb xc xd xe xf yA yB yC yD yE yF  
+ 
+* Combine graph 
+graph combine all female male, cols(1) ycommon xcommon scale(0.8) /// 
+b1title("GPA") /// 
+l1title("Kernell's density") /// 
+saving("$graphs\GPAbyEGP6_kdensity.gph") 
+ 
+************************************************ 
+* Figure 3: The probability of entering general upper secondary school by parental SES, GPA (below 5 omitted), and gender 
+************************************************ 
+ 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+quietly logit secdeg gpa i.max_egp6 
+margins max_egp6, at(gpa=(5(0.25)10)) atmeans 
+marginsplot, /// 
+name(all, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) /// 
+ylabel(0(0.2)1) /// 
+title("All") xtitle("") ytitle("") /// 
+aspectratio(0.5) /// 
+saving("$graphs\All_Academic prob.gph") 
+ 
+quietly logit secdeg gpa i.max_egp6 if ch_gndr==1 
+margins max_egp6, at(gpa=(5(0.25)10)) atmeans 
+marginsplot, /// 
+name(female, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) /// 
+ylabel(0(0.2)1) /// 
+title("Female") xtitle("") ytitle("") /// 
+aspectratio(0.5) /// 
+saving("$graphs\Female_Academic prob.gph") 
+ 
+quietly logit secdeg gpa i.max_egp6 if ch_gndr==0 
+quietly margins max_egp6, at(gpa=(5(0.25)10)) atmeans 
+marginsplot, /// 
+name(male, replace) /// 
+xscale(range(5 10)) /// 
+xlabel(5(1)10) /// 
+ylabel(0(0.2)1) /// 
+title("Male") xtitle("") ytitle("") /// 
+aspectratio(0.5) /// 
+saving("$graphs\Male_Academic prob.gph") 
+ 
+graph combine all female male, cols(1) ycommon xcommon scale(0.8) /// 
+b1title("GPA") /// 
+l1title("Probability") /// 
+saving("$graphs\GPAbyEGP6_Academic prob.gph") 
+ 
+************************************************ 
+* Table 3: KHB models, regressing upper secondary school degree on parental class. Total, secondary, and primary effects and percent mediated by GPA controlling for birth cohort and gender. Average Partial Effects. Standard errors in parentheses. 
+* Models behind: Figure 4, Supplementary material: Tables 4a-c 
+************************************************ 
+ 
+tab max_egp6, gen(cl) 
+drop cl1 
+ 
+* All  
+* KHB estimator 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa, concomitant(i.ch_gndr i.ch_yb) disentangle sum 
+est store M1_khb 
+ 
+* APE 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa, concomitant(i.ch_gndr i.ch_yb) disentangle sum ape 
+est store M1_ape 
+ 
+estout M1_ape M1_khb using "$tables\Table3_All.xlsx", /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+ 
+* KHB model by cohort 
+est clear 
+ 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EGP for birth cohort:`ch_yb'" 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_All.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+* Females 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr==1 
+tab max_egp6, gen(cl) 
+drop cl1 
+ 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa, concomitant(i.ch_gndr i.ch_yb) disentangle sum ape 
+est store M1_ape 
+ 
+estout M1_ape M1_khb using "$tables\Table3_Female.xlsx", /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+ 
+* KHB model by cohort 
+est clear 
+ 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EGP for birth cohort:`ch_yb'" 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_Female.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+* Males 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr==0 
+tab max_egp6, gen(cl) 
+drop cl1 
+ 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa, concomitant(i.ch_gndr i.ch_yb) disentangle sum ape 
+est store M1_ape 
+ 
+estout M1_ape M1_khb using "$tables\Table3_Male.xlsx", /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+ 
+* KHB model by cohort 
+est clear 
+ 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EGP for birth cohort:`ch_yb'" 
+khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_Male.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+************************************************ 
+* Appendix 
+************************************************ 
+ 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+tab1 ch_gndr max_egp6 secdeg ch_yb m_egp6 f_egp6 
+ 
+************************************************ 
+* Table 2: Mother's and father's occupational status 
+ta m_egp6 f_egp6, row m 
+ 
+************************************************ 
+* Table 3a-c: Individuals with a general or vocational secondary degree at age 21 by cohort and socioeconomic status (%). 
+* All 
+forvalues max_egp6=1/6 { 
+    ta ch_yb secdeg, row  
+} 
+ 
+* Female 
+forvalues max_egp6=1/6 { 
+    ta ch_yb secdeg if ch_gndr==1, row  
+} 
+ 
+* Male 
+forvalues max_egp6=1/6 { 
+    ta ch_yb secdeg if ch_gndr==0, row  
+} 
+ 
+************************************************ 
+* Table 5a-c: Regressing secondary school degree on parental education by birth cohort. KHB decomposition with average partial effects and primary (Diff) and secondary (Full) effect components. (Higher tertiary (ref.)) 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa pedu4cat) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+tab pedu4cat, gen(educl) 
+drop educl1 
+ 
+*All 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EDU for birth cohort:`ch_yb'" 
+khb logit secdeg educl2 educl3 educl4 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_paredu_All.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+* Female 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa pedu4cat) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr==1 
+ 
+tab pedu4cat, gen(educl) 
+drop educl1 
+ 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EDU for birth cohort:`ch_yb'" 
+khb logit secdeg educl2 educl3 educl4 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_paredu_Female.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+* Male 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa pedu4cat) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+ 
+keep if ch_gndr==0 
+ 
+tab pedu4cat, gen(educl) 
+drop educl1 
+ 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EDU for birth cohort:`ch_yb'" 
+khb logit secdeg educl2 educl3 educl4 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_paredu_Male.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))")  
+ 
+************************************************ 
+* Table 6: Regressing secondary school degree on parental class (Service class vs. others) by birth cohort. KHB decomposition with average partial effects and primary (Diff) and secondary (Full) effect components. All individuals controlling for gender 
+************************************************ 
+ 
+use "$data\choices_newdata.dta", clear 
+egen miss=rmiss(secdeg gpa max_egp6) 
+keep if miss==0  
+drop if secdeg==2 // no upper secondary degree 
+egen z_gpa=std(gpa) //  
+ 
+recode max_egp6 (1=1 "Service class") (else=2 "Others"), gen(service) 
+tab1 max_egp6 service 
+ 
+forvalues ch_yb=1975/1997 { 
+di "KHB APE parental EGP for birth cohort:`ch_yb'" 
+khb logit secdeg service || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) disentangle sum ape 
+est store M1_`ch_yb'	 
+} 
+di "KHB APE loop completed for birth cohorts 1975 to 1997." 
+estout M1_1975 M1_1976 M1_1977 M1_1978 M1_1979 M1_1980 M1_1981 M1_1982 M1_1983 M1_1984 M1_1985 M1_1986 M1_1987 M1_1988 M1_1989 M1_1990 M1_1991 M1_1992 M1_1993 M1_1994 M1_1995 M1_1996 M1_1997  using "$tables\KHB_APE_ServiceVsOthers.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf.interval))")  
+ 
+************************************************ 
+* Reviewer 1 comment on the origin of the child and missing parental data, 
+* Table 1 in Appendix 
+************************************************ 
+ 
+* total birth cohorts 
+use "$data\choices_newdata.dta", clear 
+ta ch_yb max_egp6, row m 
+recode ch_origin (11/12=1 "Finnish") (21/22=2 "other"), gen(finnish) 
+bysort finnish: ta ch_yb max_egp6, row m  
+* Response: missing data concentrates on non-Finnish and cohorts 1990-> (.96-6.32% for Finnish nationals, 22.55-70.25 for non-Finnish nationals) 
+ 
+* Listwise deletion 
+egen miss=rmiss(secdeg gpa max_egp6) 
+ta finnish miss, row 
+bysort finnish: ta max_egp6 miss, row 
+bysort ch_origin: ta ch_yb miss, row m 
+ 
+keep if miss==0 // delete missing for main variables of interest (93,365 observations deleted) 
+drop if secdeg==2 // no secondary degree (227,876 observations deleted) 
+egen z_gpa=std(gpa) //  
+ 
+set scheme plotplainblind 
+ 
+************************************************ 
+* Reviewer 3 comment on gpa comparability over time, in particular regarding the 1999 pupil assessment reform, Figures 2A & 2B in Appendix 
+************************************************ 
+ 
+* Kernell's density distribution of GPA (below 5 omitted) by parental SES and gender. Prior and after 1999 pupil assessment reform (relative -> criteria-based). 1985 cohort was the first to be evaluated most of their compulsory lower secondary (grades 7-9) within the criteria-based system. 
+ 
+gen period = ch_yb >=1985 
+ 
+* males 
+forvalues i = 1/6 { 
+quietly sum gpa if period == 0 & ch_gndr == 0 & gpa >= 5 & max_egp6 == `i', detail  
+local var0 : display %6.3f r(Var) 
+quietly sum gpa if period == 1 & ch_gndr == 0 & gpa >= 5 & max_egp6 == `i', detail  
+local var1 : display %6.3f r(Var) 
+ 
+graph twoway ///  
+(kdensity gpa if period == 0 & ch_gndr == 0 & gpa >=5 & max_egp6 == `i', bwidth(.25)) /// 
+|| (kdensity gpa if period == 1 & ch_gndr == 0 & gpa >=5 & max_egp6 == `i', bwidth(.25)), /// 
+xlabel(5(1)10) ylabel(0(0.1)0.5) /// 
+xtitle("GPA" "Var pre:`var0', Var post: `var1'") ytitle("Density") legend(order(1 "<1985" 2 ">=1985")) /// 
+title("`i'") /// 
+name(m`i', replace)	 
+}	 
+graph combine m1 m2 m3 m4 m5 m6, /// 
+title("Males") /// 
+saving("$graphs\1999reformXclass_males.gph", replace) 
+ 
+* females 
+forvalues i = 1/6 { 
+quietly sum gpa if period == 0 & ch_gndr == 1 & gpa >= 5 & max_egp6 == `i', detail  
+local var0 : display %6.3f r(Var) 
+quietly sum gpa if period == 1 & ch_gndr == 1 & gpa >= 5 & max_egp6 == `i', detail  
+local var1 : display %6.3f r(Var) 
+ 
+twoway ///  
+(kdensity gpa if period == 0 & ch_gndr == 1 & gpa >=5 & max_egp6 == `i', bwidth(.25)) /// 
+|| (kdensity gpa if period == 1 & ch_gndr == 1 & gpa >=5 & max_egp6 == `i', bwidth(.25)), /// 
+xlabel(5(1)10) ylabel(0(0.1)0.5) /// 
+xtitle("GPA" "Var pre:`var0', Var post: `var1'") ytitle("Density") legend(order(1 "<1985" 2 ">=1985")) /// 
+title("`i'") /// 
+name(f`i', replace) 
+}	 
+ 
+graph combine f1 f2 f3 f4 f5 f6, /// 
+title("Females") /// 
+saving("$graphs\1999reformXclass_females.gph", replace) 
+ 
+************************************************ 
+* Reviewer 2 comment on including social class and cohort interactions,  
+* Figures 5 & 6 in Appendix 
+************************************************ 
+ 
+* interactions ALL 
+logit secdeg gpa i.max_egp6 ch_yb 
+est store modelA 
+logit secdeg gpa i.max_egp6 i.max_egp6##ch_yb 
+lrtest . modelA 
+margins max_egp6, at(ch_yb=(1975(1)1997))  
+marginsplot, xdimension(ch_yb) bydimension(max_egp6) 
+ 
+* Visualize interaction models 
+* All 
+quietly logit secdeg gpa i.max_egp6 i.max_egp6##c.ch_yb 
+margins max_egp6, at(ch_yb=(1975(1)1997))  
+marginsplot, plotdimension(max_egp6) /// 
+title("All") /// 
+saving("$graphs\Marginsplot classXcohort interaction ALL.gph", replace) 
+ 
+* Males 
+quietly logit secdeg gpa i.max_egp6 i.max_egp6##c.ch_yb if ch_gndr==0 
+margins max_egp6, at(ch_yb=(1975(1)1997))  
+marginsplot, plotdimension(max_egp6) /// 
+title("Males") /// 
+saving("$graphs\Marginsplot classXcohort interaction MALES.gph", replace) 
+ 
+* Females 
+quietly logit secdeg gpa i.max_egp6 i.max_egp6##c.ch_yb if ch_gndr==1 
+margins max_egp6, at(ch_yb=(1975(1)1997))  
+marginsplot, plotdimension(max_egp6) /// 
+title("Females") /// 
+saving("$graphs\Marginsplot classXcohort interaction FEMALES.gph", replace) 
+ 
+graph combine /// 
+"$graphs\Marginsplot classXcohort interaction ALL.gph" "$graphs\Marginsplot classXcohort interaction FEMALES.gph" /// 
+"$graphs\Marginsplot classXcohort interaction MALES.gph", /// 
+cols(1) ycommon /// 
+saving("$graphs\Margisplot classXcohort interaction FINAL.gph", replace) 
+ 
+* Seemingly linear trend, on average the SES gap between lower and upper classes has narrowed, in particular boys from Farmer's and Non-skilled Manual classes have benefitted when comparing to Service class (p=0.000) 
+ 
+*linear regression with GPA, f-test for interaction terms 
+reg gpa i.max_egp6 i.ch_yb 
+est store modelB 
+reg gpa i.max_egp6 i.ch_yb i.max_egp6##i.ch_yb 
+ftest . modelB 
+ 
+margins max_egp6, at(ch_yb=(1975(1)1997))  
+marginsplot, xdimension(ch_yb) bydimension(max_egp6) 
+ 
+************************************************ 
+* further data visualization: parental EGP and education, Figure 3 in Appendix 
+************************************************ 
+ 
+* EGP 
+preserve 
+gen count = 1 
+collapse (sum) count, by(ch_yb max_egp6) 
+bys ch_yb: egen total = sum(count) 
+gen percent = 100*count/total 
+reshape wide percent count total, i(ch_yb) j(max_egp6) 
+ 
+graph bar percent6 percent5 percent4 percent3 percent2 percent1, /// 
+over(ch_yb, lab(angle(45))) /// 
+stack ///	 
+bar(1, fcolor(gs0)) /// 
+bar(2, fcolor(gs4)) /// 
+bar(3, fcolor(gs7)) /// 
+bar(4, fcolor(gs10)) /// 
+bar(5, fcolor(gs12)) /// 
+bar(6, fcolor(gs15)) /// 
+ylab(0(20)100) ytitle("Percent") /// 
+legend(order(6 "Service class" 5 "Routine non-manual"  4 "Proprietors" 3 "Farmers"2 "Skilled manual" 1 "Non-skilled manual")) /// 
+title("EGP") 
+graph save "$graphs\EGPdistribution.gph", replace 
+restore 
+ 
+* education	 
+preserve 
+gen count = 1 
+collapse (sum) count, by(ch_yb pedu4cat) 
+bys ch_yb: egen total = sum(count) 
+gen percent = 100*count/total 
+reshape wide percent count total, i(ch_yb) j(pedu4cat) 
+ 
+graph bar percent4 percent3 percent2 percent1, /// 
+over(ch_yb, lab(angle(45))) /// 
+stack ///	 
+bar(1, fcolor(gs0)) /// 
+bar(2, fcolor(gs7)) /// 
+bar(3, fcolor(gs12)) /// 
+bar(4, fcolor(gs15)) /// 
+ylab(0(20)100) ytitle("Percent") /// 
+legend(order(4 "Higher tertiary" 3 "Lower tertiary" 2 "Secondary" 1 "Less than secondary")) /// 
+title("Education") 
+graph save "$graphs\PEDUdistribution.gph", replace 
+restore	 
+ 
+graph combine "$graphs\EGPdistribution.gph"	"$graphs\PEDUdistribution.gph", /// 
+cols(1) /// 
+saving("$graphs\EGP_PEDU.gph", replace) 
+ 
+************************************************ 
+/* decompose primary effect into a) the level of social inequality in school performance and  
+b) the influence of academic performance on educational choice   
+*/	 
+tab max_egp6, gen(cl) 
+drop cl1 
+************************************************ 
+ 
+*** a) theta OA  
+* all 
+quietly reg z_gpa i.max_egp6 i.ch_gndr i.ch_yb, vce(ols)  
+est store modelA 
+ 
+* females 
+quietly reg z_gpa i.max_egp6 i.ch_yb if ch_gndr==1, vce(ols)  
+est store femA 
+ 
+* males 
+quietly reg z_gpa i.max_egp6 i.ch_yb if ch_gndr==0, vce(ols)  
+est store maleA 
+ 
+estout modelA femA maleA using "$tables\modelA_ALL.xlsx", /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std. err.)) z(fmt(3) label(z)) ci(fmt(3) label(95% conf. interval))") replace  
+ 
+*** b) beta AE*O 
+* all 
+logit secdeg z_gpa i.max_egp6 i.ch_gndr i.ch_yb 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store all 
+ 
+* females  
+quietly logit secdeg i.max_egp6 z_gpa i.ch_yb if ch_gndr==1 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store fem 
+ 
+* males  
+quietly logit secdeg i.max_egp6 z_gpa i.ch_yb if ch_gndr==0 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store male 
+ 
+esttab all fem male using "$tables\modelB_ALL.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+*** c) khb model with ape 
+* khb ape 
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa, concomitant(i.ch_gndr i.ch_yb) sum ape 
+est store khb1 
+ 
+* females  
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_gndr==1, concomitant (i.ch_yb) sum ape 
+est store khb2 
+ 
+* males 
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_gndr==0, concomitant (i.ch_yb) sum ape 
+est store khb3 
+ 
+estout khb1 khb2 khb3 using "$tables\khb_ape.xlsx", /// 
+cells("b(fmt(3) label(APE)) p(fmt(3) label(p-value.))")  
+ 
+************************************************	 
+* Total decomposition by cohort, Figure 4 in Appendix	 
+************************************************	 
+*** a) theta OA 
+* all 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "Social origin on GPA:`ch_yb'" 
+quietly reg z_gpa i.max_egp6 i.ch_gndr if ch_yb==`ch_yb', vce(ols)  
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp_ALL_7580.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp_ALL_8186.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp_ALL_8792.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp_ALL_9397.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+ 
+* females 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "Social origin on GPA:`ch_yb'" 
+quietly reg z_gpa i.max_egp6 i.ch_gndr if ch_gndr==1 & ch_yb==`ch_yb', vce(ols)  
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp_FEM_7580.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp_FEM_8186.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp_FEM_8792.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp_FEM_9397.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+ 
+* males		 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "Social origin on GPA:`ch_yb'" 
+quietly reg z_gpa i.max_egp6 i.ch_gndr if ch_gndr==0 & ch_yb==`ch_yb', vce(ols)  
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp_MALES_7580.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp_MALES_8186.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp_MALES_8792.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp_MALES_9397.xlsx", replace /// 
+cells("b(fmt(3) label(Coef.)) se(fmt(3) label(Std.err.)) p(fmt(3) label(p-value))") 		 
+ 
+***		 
+*** b) beta AE*O 
+* all 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "GPA on choice:`ch_yb'" 
+quietly logit secdeg i.max_egp6 z_gpa i.ch_gndr if ch_yb==`ch_yb' 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp2_ALL_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp2_ALL_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp2_ALL_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp2_ALL_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+* females 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "GPA on choice:`ch_yb'" 
+quietly logit secdeg i.max_egp6 z_gpa if ch_gndr==1 & ch_yb==`ch_yb' 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp2_FEM_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp2_FEM_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp2_FEM_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp2_FEM_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+* males		 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "GPA on choice:`ch_yb'" 
+quietly logit secdeg i.max_egp6 z_gpa if ch_gndr==0 & ch_yb==`ch_yb' 
+margins, dydx(z_gpa) at(max_egp6=(2 3 4 5 6)) post  
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\decomp2_MALES_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\decomp2_MALES_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\decomp2_MALES_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\decomp2_MALES_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+*** 
+*** c) khb model with ape	 
+* all 
+est clear 
+forvalues ch_yb=1975/1997 { 
+di "KHB decomposition, APEs:`ch_yb'" 
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb', concomitant(i.ch_gndr) sum ape 
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\ape_ALL_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\ape_ALL_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\ape_ALL_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\ape_ALL_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+* females  
+forvalues ch_yb=1975/1997 { 
+di "KHB decomposition, APEs:`ch_yb'" 
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb' & ch_gndr==1, sum ape 
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\ape_FEMALES_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\ape_FEMALES_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\ape_FEMALES_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\ape_FEMALES_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+ 
+* males 
+forvalues ch_yb=1975/1997 { 
+di "KHB decomposition, APEs:`ch_yb'" 
+quietly khb logit secdeg cl2 cl3 cl4 cl5 cl6 || z_gpa if ch_yb==`ch_yb' & ch_gndr==0, sum ape 
+ 
+est store a`ch_yb'	 
+} 
+di "Loop completed for birth cohorts 1975 to 1997." 
+ 
+estout a1975 a1976 a1977 a1978 a1979 a1980 using "$tables\ape_MALES_7580.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1981 a1982 a1983 a1984 a1985 a1986 using "$tables\ape_MALES_8186.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1987 a1988 a1989 a1990 a1991 a1992 using "$tables\ape_MALES_8792.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+estout a1993 a1994 a1995 a1996 a1997 using "$tables\ape_MALES_9397.xlsx", replace /// 
+cells("b(fmt(3) label(AME)) se(fmt(3) label(Std. err.)) p(fmt(3) label(p-value)) ")  
+ 
+exit, clear		 
+ 
